@@ -1,6 +1,24 @@
 # -*- coding: utf-8 -*-
 """Closest String Problem solution."""
-from . import Problem
+
+
+class Problem(object):
+    """Definition of a general purpose ACO problem."""
+
+    def __init__(self, location):
+        self.load_input_data(location)
+
+    def load_input_data(self, location):
+        raise NotImplementedError
+
+
+class Solver(object):
+    """Definition of a general purpose ACO solver."""
+
+    def __init__(self, cfg):
+        self.alpha = cfg['--alpha']
+        self.beta = cfg['--beta']
+        self.num_ants = cfg['--numants']
 
 
 class CSPProblem(Problem):
@@ -26,6 +44,3 @@ class CSPProblem(Problem):
                 elif line.strip():
                     self.strings.append(line.strip())
 
-
-prob = CSPProblem('../instances/2-30-10000-1-9.csp')
-print(prob.alphabet_length)
