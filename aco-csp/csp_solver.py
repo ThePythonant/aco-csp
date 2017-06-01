@@ -89,6 +89,7 @@ class CSPProblem(Problem):
     def __init__(self, instance_location):
         super(CSPProblem, self).__init__(instance_location)
         self.strings = np.array(self.strings)
+        self.inv_alphabet = {ch: i for i, ch in enumerate(self.alphabet)}
 
     def _init_internal_structures(self):
         self.strings = []
@@ -134,7 +135,6 @@ class CSPSolver(Solver):
             ant = Ant()
             ant.find_solution(pheromone, self.problem.alphabet)
             ant.evaluate_solution(self.problem.strings)
-            print(ant.score)
             self.ants.append(ant)
 
     def init_pheromone(self):
@@ -150,6 +150,9 @@ class CSPSolver(Solver):
 
     def deposit_pheromone(self):
         """Deposit pheromone into the pheromone data structure."""
+        for i, ch in enumerate(self.best_ant.solution):
+            self.pheromone[self.problem.inv_alphabet[ch]][i] += (
+                1 - self.best_ant.score / self.problem.str_length)
 
 
 class Ant(object):

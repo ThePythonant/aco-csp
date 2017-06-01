@@ -18,4 +18,5 @@ from csp_solver import CSPSolver
 if __name__ == '__main__':
     args = docopt(__doc__, version='FIXME')
     solver = CSPSolver(args)
+    print(solver.problem.inv_alphabet)
     solver.solve()
