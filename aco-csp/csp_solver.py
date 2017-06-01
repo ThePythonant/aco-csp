@@ -79,6 +79,7 @@ class CSPSolver(Solver):
 
     def __init__(self, cfg):
         super(CSPSolver, self).__init__(cfg)
+        self.best_ant = None  # Best ant reference
 
     def _init_problem(self):
         """Assign CSP Problem to the solver."""
