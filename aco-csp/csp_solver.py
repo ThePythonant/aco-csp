@@ -28,11 +28,19 @@ def hamming_function(char1, char2):
 v_hamming_distance = np.vectorize(hamming_distance)
 
 
+def pick_random(arr, ran):
+    """Wrapper function for random choice to allow vectorization."""
+    return np.random.choice(ran, p=arr)
+
+
+v_pick_random = np.vectorize(pick_random)
+
+
 class Problem(object):
     """Definition of a general purpose ACO problem."""
 
     def __init__(self, location):
-        self._init_main_structures()
+        self._init_internal_structures()
         self.load_input_data(location)
 
     def load_input_data(self, location):
@@ -52,8 +60,11 @@ class Solver(object):
         self._init_problem()
         self.alpha = self.cfg['--alpha']
         self.beta = self.cfg['--beta']
-        self.rho = self.cfg['--rho']
-        self.num_ants = self.cfg['--numants']
+        if self.cfg['--rho']:
+            self.rho = float(self.cfg['--rho'])
+        self.num_ants = int(self.cfg['--numants'])
+        self.init_pheromone()
+        self.init_ants(self.pheromone)
 
     def solve(self):
         """Method in charge of solving the problem."""
@@ -116,6 +127,16 @@ class CSPSolver(Solver):
         """Solve method for the CSP."""
         pass
 
+    def init_ants(self, pheromone):
+        """Initialise the colony members."""
+        self.ants = []
+        for _ in range(self.num_ants):
+            ant = Ant()
+            ant.find_solution(pheromone, self.problem.alphabet)
+            ant.evaluate_solution(self.problem.strings)
+            print(ant.score)
+            self.ants.append(ant)
+
     def init_pheromone(self):
         """Pheromone initialised with a constant value 1/|Alphabet|."""
         self.pheromone = np.empty(
@@ -137,9 +158,13 @@ class Ant(object):
     def __init__(self):
         pass
 
-    def find_solution(self, pheromone):
+    def _rnd_choice(self, arr, ran):
+        return np.random.choice(ran, p=arr)
 
-        pass
+    def find_solution(self, pheromone, alphabet):
+        str_pos = np.apply_along_axis(self._rnd_choice, 0, pheromone,
+                                      len(alphabet))
+        self.solution = ''.join([alphabet[p] for p in str_pos])
 
     def evaluate_solution(self, strings):
         """Evaluates the current solution distance to the strings parameter."""
