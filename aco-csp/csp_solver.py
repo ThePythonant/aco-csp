@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
 """Closest String Problem solution."""
+import numpy as np
 
 
 class Problem(object):
     """Definition of a general purpose ACO problem."""
 
     def __init__(self, location):
+        self._init_main_structures()
         self.load_input_data(location)
 
     def load_input_data(self, location):
+        """Load input data from external instance file."""
+        raise NotImplementedError
+
+    def _init_internal_structures(self):
+        """Initialise specific structures to be used by the problem."""
         raise NotImplementedError
 
 
@@ -16,18 +23,38 @@ class Solver(object):
     """Definition of a general purpose ACO solver."""
 
     def __init__(self, cfg):
-        self.alpha = cfg['--alpha']
-        self.beta = cfg['--beta']
-        self.num_ants = cfg['--numants']
+        self.cfg = cfg
+        self._init_problem()
+        self.alpha = self.cfg['--alpha']
+        self.beta = self.cfg['--beta']
+        self.num_ants = self.cfg['--numants']
+
+    def solve(self):
+        """Method in charge of solving the problem."""
+        raise NotImplementedError
+
+    def _init_problem(self):
+        """Initialise the problem to be solved by the solver."""
+        raise NotImplementedError
+
+    def init_pheromone(self):
+        """Initialise the pheromone information."""
+        raise NotImplementedError
+
+    def init_ants(self):
+        """Initialise the ants that will form the colony."""
+        raise NotImplementedError
 
 
 class CSPProblem(Problem):
     """Closest String Problem Representation."""
 
     def __init__(self, instance_location):
+        super(CSPProblem, self).__init__(instance_location)
+
+    def _init_internal_structures(self):
         self.strings = []
         self.alphabet = []
-        super(CSPProblem, self).__init__(instance_location)
 
     def load_input_data(self, instance_location):
         """Load input data from provided instances format."""
@@ -44,3 +71,39 @@ class CSPProblem(Problem):
                 elif line.strip():
                     self.strings.append(line.strip())
 
+
+class CSPSolver(Solver):
+    """Closest String Problem ACO Solver class.
+
+    Contains the colony and main structure for solving the problem."""
+
+    def __init__(self, cfg):
+        super(CSPSolver, self).__init__(cfg)
+
+    def _init_problem(self):
+        """Assign CSP Problem to the solver."""
+        self.problem = CSPProblem(self.cfg['--instance'])
+
+    def solve(self):
+        """Solve method for the CSP."""
+        pass
+
+    def init_pheromone(self):
+        """Pheromone initialised with a constant value 1/|Alphabet|."""
+        self.pheromone = np.empty(
+            (self.problem.alphabet_length, self.problem.str_length),
+            dtype=float)
+        self.pheromone.fill(1 / self.problem.alphabet_length)
+
+
+class Ant(object):
+    """Ant definition for the CSP."""
+
+    def __init__(self):
+        pass
+
+    def find_solution(self):
+        pass
+
+    def evaluate_solution(self):
+        pass
