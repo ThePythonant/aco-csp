@@ -8,7 +8,8 @@ Usage:
 Options:
   -i --instance=<path>  Path to instance file
   -a --alpha=<val>      Alpha value to be used
-  -b --beta=<val>      Beta value to be used
+  -b --beta=<val>       Beta value to be used
+  -r --rho=<val>        Rho value to be used
   -n --numants=<val>    Number of ants
 """
 from docopt import docopt

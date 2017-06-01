@@ -1,6 +1,31 @@
 # -*- coding: utf-8 -*-
 """Closest String Problem solution."""
 import numpy as np
+import logging
+
+logger = logging.getLogger('CSP Solver')
+
+
+def hamming_distance(str1, str2):
+    """Computes the hamming distance between two strings."""
+    if len(str1) != len(str2):
+        logger.error("Strings should have the same lenght"
+                     " for computing the hamming distance")
+        raise Exception
+    hd = 0
+    for c1, c2 in zip(str1, str2):
+        hd += hamming_function(c1, c2)
+    return hd
+
+
+def hamming_function(char1, char2):
+    """Helper function to compute the Hamming distance between 2 characters."""
+    if char1 == char2:
+        return 0
+    return 1
+
+
+v_hamming_distance = np.vectorize(hamming_distance)
 
 
 class Problem(object):
@@ -27,6 +52,7 @@ class Solver(object):
         self._init_problem()
         self.alpha = self.cfg['--alpha']
         self.beta = self.cfg['--beta']
+        self.rho = self.cfg['--rho']
         self.num_ants = self.cfg['--numants']
 
     def solve(self):
@@ -51,6 +77,7 @@ class CSPProblem(Problem):
 
     def __init__(self, instance_location):
         super(CSPProblem, self).__init__(instance_location)
+        self.strings = np.array(self.strings)
 
     def _init_internal_structures(self):
         self.strings = []
@@ -96,6 +123,13 @@ class CSPSolver(Solver):
             dtype=float)
         self.pheromone.fill(1 / self.problem.alphabet_length)
 
+    def evaporate_pheromone(self):
+        """Evaporation of pheromone."""
+        self.pheromone -= self.rho
+
+    def deposit_pheromone(self):
+        """Deposit pheromone into the pheromone data structure."""
+
 
 class Ant(object):
     """Ant definition for the CSP."""
@@ -103,8 +137,10 @@ class Ant(object):
     def __init__(self):
         pass
 
-    def find_solution(self):
+    def find_solution(self, pheromone):
+
         pass
 
-    def evaluate_solution(self):
-        pass
+    def evaluate_solution(self, strings):
+        """Evaluates the current solution distance to the strings parameter."""
+        self.score = v_hamming_distance(strings, self.solution).sum()
