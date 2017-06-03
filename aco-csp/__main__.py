@@ -9,7 +9,7 @@ Options:
   -i --instance=<path>  Path to instance file
   -a --alpha=<val>      Alpha value to be used
   -b --beta=<val>       Beta value to be used
-  -r --rho=<val>        Rho value to be used
+  -r --rho=<val>        Rho value to be used [default: 0.003]
   -n --numants=<val>    Number of ants [default: 10]
   -s --seed=<val>       Seed to use in the random generator [default: 1234]
 """

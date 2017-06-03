@@ -64,7 +64,7 @@ class Solver(object):
             self.rho = float(self.cfg['--rho'])
         self.num_ants = int(self.cfg['--numants'])
         self.init_pheromone()
-        self.init_ants(self.pheromone)
+        self.init_ants()
 
     def solve(self):
         """Method in charge of solving the problem."""
@@ -80,6 +80,10 @@ class Solver(object):
 
     def init_ants(self):
         """Initialise the ants that will form the colony."""
+        raise NotImplementedError
+
+    def terminate(self):
+        """Give the termination condition."""
         raise NotImplementedError
 
 
@@ -126,16 +130,36 @@ class CSPSolver(Solver):
 
     def solve(self):
         """Solve method for the CSP."""
-        pass
+        self._num_evaluations = 0
+        while not self.terminate():
+            for ant in self.ants:
+                ant.find_solution(self.pheromone, self.problem.alphabet)
+                ant.evaluate_solution(self.problem.strings)
+                if self.best_ant.score < ant.score:
+                    self.best_ant = ant
+            self._num_evaluations += 1
+        self.evaporate_pheromone()
+        self.deposit_pheromone()
+        logger.info(self.best_ant.score)
 
-    def init_ants(self, pheromone):
+    def terminate(self):
+        """Set termination condition."""
+        self._num_evaluations >= 15000
+
+    def init_ants(self):
         """Initialise the colony members."""
         self.ants = []
-        for _ in range(self.num_ants):
+        for i in range(self.num_ants):
             ant = Ant()
-            ant.find_solution(pheromone, self.problem.alphabet)
+            ant.find_solution(self.pheromone, self.problem.alphabet)
             ant.evaluate_solution(self.problem.strings)
+            if i == 0:
+                self.best_ant = ant
+            elif self.best_ant.score < ant.score:
+                self.best_ant = ant
             self.ants.append(ant)
+        self.evaporate_pheromone()
+        self.deposit_pheromone()
 
     def init_pheromone(self):
         """Pheromone initialised with a constant value 1/|Alphabet|."""
