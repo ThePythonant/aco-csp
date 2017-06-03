@@ -3,7 +3,12 @@
 import numpy as np
 import logging
 
+logging_level = logging.INFO
 logger = logging.getLogger('CSP Solver')
+logger.setLevel(logging_level)
+ch = logging.StreamHandler()
+ch.setLevel(logging_level)
+logger.addHandler(ch)
 
 
 def hamming_distance(str1, str2):
@@ -63,6 +68,7 @@ class Solver(object):
         if self.cfg['--rho']:
             self.rho = float(self.cfg['--rho'])
         self.num_ants = int(self.cfg['--numants'])
+        self.max_iter = int(self.cfg['--maxiter'])
         self.init_pheromone()
         self.init_ants()
 
@@ -85,6 +91,11 @@ class Solver(object):
     def terminate(self):
         """Give the termination condition."""
         raise NotImplementedError
+
+    def normalize_pheromone(self):
+        self.pheromone[self.pheromone < 0] = 0
+        self.pheromone = self.pheromone / self.pheromone.sum(axis=0)
+        logger.debug("Normalized pheromone: %s" % self.pheromone)
 
 
 class CSPProblem(Problem):
@@ -122,7 +133,6 @@ class CSPSolver(Solver):
 
     def __init__(self, cfg):
         super(CSPSolver, self).__init__(cfg)
-        self.best_ant = None  # Best ant reference
 
     def _init_problem(self):
         """Assign CSP Problem to the solver."""
@@ -135,16 +145,18 @@ class CSPSolver(Solver):
             for ant in self.ants:
                 ant.find_solution(self.pheromone, self.problem.alphabet)
                 ant.evaluate_solution(self.problem.strings)
-                if self.best_ant.score < ant.score:
+                if self.best_ant.score > ant.score:
                     self.best_ant = ant
+            self.evaporate_pheromone()
+            self.deposit_pheromone()
+            self.normalize_pheromone()
             self._num_evaluations += 1
-        self.evaporate_pheromone()
-        self.deposit_pheromone()
-        logger.info(self.best_ant.score)
+            logger.info('Iteration: %d score: %d' % (self._num_evaluations,
+                                                     self.best_ant.score))
 
     def terminate(self):
         """Set termination condition."""
-        self._num_evaluations >= 15000
+        return self._num_evaluations >= self.max_iter
 
     def init_ants(self):
         """Initialise the colony members."""
@@ -155,11 +167,12 @@ class CSPSolver(Solver):
             ant.evaluate_solution(self.problem.strings)
             if i == 0:
                 self.best_ant = ant
-            elif self.best_ant.score < ant.score:
+            elif self.best_ant.score > ant.score:
                 self.best_ant = ant
             self.ants.append(ant)
         self.evaporate_pheromone()
         self.deposit_pheromone()
+        self.normalize_pheromone()
 
     def init_pheromone(self):
         """Pheromone initialised with a constant value 1/|Alphabet|."""
@@ -176,7 +189,8 @@ class CSPSolver(Solver):
         """Deposit pheromone into the pheromone data structure."""
         for i, ch in enumerate(self.best_ant.solution):
             self.pheromone[self.problem.inv_alphabet[ch]][i] += (
-                1 - self.best_ant.score / self.problem.str_length)
+                1.0 -
+                self.best_ant.max_hamming_distance / self.problem.str_length)
 
 
 class Ant(object):
@@ -189,10 +203,13 @@ class Ant(object):
         return np.random.choice(ran, p=arr)
 
     def find_solution(self, pheromone, alphabet):
+        logger.debug("Pheromone to be used in the solution: %s" % pheromone)
         str_pos = np.apply_along_axis(self._rnd_choice, 0, pheromone,
                                       len(alphabet))
         self.solution = ''.join([alphabet[p] for p in str_pos])
 
     def evaluate_solution(self, strings):
         """Evaluates the current solution distance to the strings parameter."""
-        self.score = v_hamming_distance(strings, self.solution).sum()
+        hamming_distances = v_hamming_distance(strings, self.solution)
+        self.max_hamming_distance = np.amax(hamming_distances)
+        self.score = hamming_distances.sum()

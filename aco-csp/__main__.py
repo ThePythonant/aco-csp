@@ -12,6 +12,7 @@ Options:
   -r --rho=<val>        Rho value to be used [default: 0.003]
   -n --numants=<val>    Number of ants [default: 10]
   -s --seed=<val>       Seed to use in the random generator [default: 1234]
+  -m --maxiter=<val>    Maximum number of iterations to run [default: 1000]
 """
 from docopt import docopt
 from csp_solver import CSPSolver
