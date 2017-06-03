@@ -41,6 +41,13 @@ def pick_random(arr, ran):
 v_pick_random = np.vectorize(pick_random)
 
 
+def rnd_choice(arr, ran):
+    return np.random.choice(ran, p=arr)
+
+
+v_rnd_choice = np.vectorize(rnd_choice)
+
+
 class Problem(object):
     """Definition of a general purpose ACO problem."""
 
@@ -144,8 +151,11 @@ class CSPSolver(Solver):
         while not self.terminate():
             self._solve_colony()
             self._num_evaluations += 1
-            logger.info('Iteration: %d score: %d' % (self._num_evaluations,
-                                                     self.best_ant.score))
+            logger.info('Iteration: %d score: %d best HD: %d worst HD: %d' %
+                        (self._num_evaluations, self.best_ant.score,
+                         self.best_ant.min_hamming_distance,
+                         self.best_ant.max_hamming_distance))
+            logger.info('Solution: %s' % self.best_ant.solution)
 
     def terminate(self):
         """Set termination condition."""
@@ -163,8 +173,10 @@ class CSPSolver(Solver):
     def _solve_colony(self):
         """Auxiliary method to run the solution process in the colony."""
         for ant in self.ants:
-            ant.find_solution(self.pheromone, self.problem.alphabet)
+            # print('hello')
+            ant.alt_find_solution(self.pheromone, self.problem.alphabet)
             ant.evaluate_solution(self.problem.strings)
+            # print('bye')
             if self.best_ant.score > ant.score:
                 self.best_ant = ant
         self.evaporate_pheromone()
@@ -205,8 +217,16 @@ class Ant(object):
                                       len(alphabet))
         self.solution = ''.join([alphabet[p] for p in str_pos])
 
+    def alt_find_solution(self, pheromone, alphabet):
+        pos = [
+            self._rnd_choice(pheromone[:, i], len(alphabet))
+            for i in range(pheromone.shape[1])
+        ]
+        self.solution = ''.join([alphabet[p] for p in pos])
+
     def evaluate_solution(self, strings):
         """Evaluates the current solution distance to the strings parameter."""
         hamming_distances = v_hamming_distance(strings, self.solution)
         self.max_hamming_distance = np.amax(hamming_distances)
+        self.min_hamming_distance = np.amin(hamming_distances)
         self.score = hamming_distances.sum()
