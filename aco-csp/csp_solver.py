@@ -142,14 +142,7 @@ class CSPSolver(Solver):
         """Solve method for the CSP."""
         self._num_evaluations = 0
         while not self.terminate():
-            for ant in self.ants:
-                ant.find_solution(self.pheromone, self.problem.alphabet)
-                ant.evaluate_solution(self.problem.strings)
-                if self.best_ant.score > ant.score:
-                    self.best_ant = ant
-            self.evaporate_pheromone()
-            self.deposit_pheromone()
-            self.normalize_pheromone()
+            self._solve_colony()
             self._num_evaluations += 1
             logger.info('Iteration: %d score: %d' % (self._num_evaluations,
                                                      self.best_ant.score))
@@ -160,16 +153,20 @@ class CSPSolver(Solver):
 
     def init_ants(self):
         """Initialise the colony members."""
-        self.ants = []
-        for i in range(self.num_ants):
-            ant = Ant()
+        logger.info('Preparing %d ants for the colony' % self.num_ants)
+        self.ants = [Ant() for _ in range(self.num_ants)]
+        self.best_ant = self.ants[0]
+        self._solve_colony()
+
+        logger.info('Colony initialised!')
+
+    def _solve_colony(self):
+        """Auxiliary method to run the solution process in the colony."""
+        for ant in self.ants:
             ant.find_solution(self.pheromone, self.problem.alphabet)
             ant.evaluate_solution(self.problem.strings)
-            if i == 0:
+            if self.best_ant.score > ant.score:
                 self.best_ant = ant
-            elif self.best_ant.score > ant.score:
-                self.best_ant = ant
-            self.ants.append(ant)
         self.evaporate_pheromone()
         self.deposit_pheromone()
         self.normalize_pheromone()
@@ -197,7 +194,7 @@ class Ant(object):
     """Ant definition for the CSP."""
 
     def __init__(self):
-        pass
+        self.score = 9999999
 
     def _rnd_choice(self, arr, ran):
         return np.random.choice(ran, p=arr)
