@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Closest String Problem solution."""
 import numpy as np
+import pandas as pd
 import logging
+import timeit
 
 logging_level = logging.INFO
 logger = logging.getLogger('CSP Solver')
@@ -33,15 +35,10 @@ def hamming_function(char1, char2):
 v_hamming_distance = np.vectorize(hamming_distance)
 
 
-def pick_random(arr, ran):
-    """Wrapper function for random choice to allow vectorization."""
-    return np.random.choice(ran, p=arr)
-
-
-v_pick_random = np.vectorize(pick_random)
-
-
 def rnd_choice(arr, ran):
+    """Wrapper function for random choice to allow vectorization."""
+    print('Range: %d' % ran)
+    print('Array: %s' % arr)
     return np.random.choice(ran, p=arr)
 
 
@@ -173,10 +170,15 @@ class CSPSolver(Solver):
     def _solve_colony(self):
         """Auxiliary method to run the solution process in the colony."""
         for ant in self.ants:
-            # print('hello')
-            ant.alt_find_solution(self.pheromone, self.problem.alphabet)
+            start_time = timeit.default_timer()
+            ant.find_solution_2(self.pheromone, self.problem.alphabet)
+            elapsed = timeit.default_timer() - start_time
+            print('Find solution time: %f' % elapsed)
+
+            start_time = timeit.default_timer()
             ant.evaluate_solution(self.problem.strings)
-            # print('bye')
+            elapsed = timeit.default_timer() - start_time
+            print('Evaluate solution time: %f' % elapsed)
             if self.best_ant.score > ant.score:
                 self.best_ant = ant
         self.evaporate_pheromone()
@@ -209,7 +211,12 @@ class Ant(object):
         self.score = 9999999
 
     def _rnd_choice(self, arr, ran):
+        # print(arr)
+        # start_time = timeit.default_timer()
         return np.random.choice(ran, p=arr)
+        # elapsed = timeit.default_timer() - start_time
+        # print('Random choice time: %f' % elapsed)
+        # return rnd
 
     def find_solution(self, pheromone, alphabet):
         logger.debug("Pheromone to be used in the solution: %s" % pheromone)
@@ -217,11 +224,23 @@ class Ant(object):
                                       len(alphabet))
         self.solution = ''.join([alphabet[p] for p in str_pos])
 
-    def alt_find_solution(self, pheromone, alphabet):
+    def find_solution_2(self, pheromone, alphabet):
+        ln = len(alphabet)
         pos = [
-            self._rnd_choice(pheromone[:, i], len(alphabet))
+            self._rnd_choice(pheromone[:, i], ln)
             for i in range(pheromone.shape[1])
         ]
+        self.solution = ''.join([alphabet[p] for p in pos])
+
+    def find_solution_3(self, pheromone, alphabet):
+        ln = len(alphabet)
+        # start_time = timeit.default_timer()
+        a = pd.DataFrame(pheromone)
+        # elapsed = timeit.default_timer() - start_time
+        # print('Create dataframe: %f' % elapsed)
+        pos = a.apply(self._rnd_choice, axis=0, args=[ln])
+        # pos = v_rnd_choice(a, ln)
+
         self.solution = ''.join([alphabet[p] for p in pos])
 
     def evaluate_solution(self, strings):
